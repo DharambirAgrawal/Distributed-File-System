@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}{{ file.original_filename }} - Cloud DFS{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <div class="col-12 h-100">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-3 rounded">
+                <div class="d-flex align-items-center">
+                    <a href="{{ url_for('main.files_page') }}" class="btn btn-outline-secondary me-3">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Files
+                    </a>
+                    <div>
+                        <h5 class="mb-0">
+                            <i class="{{ get_file_type_icon(file.original_filename) }} me-2"></i>
+                            {{ file.original_filename }}
+                        </h5>
+                        <small class="text-muted">
+                            {{ "%.2f"|format(file.file_size / 1024 / 1024) }} MB • 
+                            Uploaded {{ file.upload_date.strftime('%Y-%m-%d %H:%M') }}
+                        </small>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('main.download_file_web', file_id=file.id) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Download
+                    </a>
+                    {% if not file.is_synced %}
+                    <a href="{{ url_for('main.sync_to_backup', file_id=file.id) }}" 
+                       class="btn btn-success">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Sync to Cloud
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- File Viewer -->
+            <div class="file-viewer-container bg-white rounded shadow-sm p-3" style="height: calc(100vh - 200px);">
+                {% if file_mimetype.startswith('image/') %}
+                    <!-- Image Viewer -->
+                    <div class="text-center h-100 d-flex align-items-center justify-content-center">
+                        <img src="{{ url_for('main.view_file_web', file_id=file.id) }}" 
+                             class="img-fluid" 
+                             style="max-height: 100%; max-width: 100%; object-fit: contain;"
+                             alt="{{ file.original_filename }}">
+                    </div>
+                {% elif file_mimetype == 'application/pdf' %}
+                    <!-- PDF Viewer -->
+                    <div class="h-100">
+                        <iframe src="{{ url_for('main.view_file_web', file_id=file.id) }}" 
+                                class="w-100 h-100 border-0 rounded"
+                                title="{{ file.original_filename }}">
+                            <p>Your browser doesn't support PDF viewing. 
+                               <a href="{{ url_for('main.download_file_web', file_id=file.id) }}">Download the file</a> instead.</p>
+                        </iframe>
+                    </div>
+                {% else %}
+                    <!-- Unsupported File Type -->
+                    <div class="text-center h-100 d-flex align-items-center justify-content-center">
+                        <div>
+                            <i class="fas fa-file-times fa-5x text-muted mb-3"></i>
+                            <h4 class="text-muted">Preview not available</h4>
+                            <p class="text-muted">This file type cannot be previewed in the browser.</p>
+                            <a href="{{ url_for('main.download_file_web', file_id=file.id) }}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-download me-2"></i>Download File
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- File Information -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>File Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Size:</strong><br>
+                                    <span class="text-muted">{{ "%.2f"|format(file.file_size / 1024 / 1024) }} MB</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Type:</strong><br>
+                                    <span class="text-muted">{{ file_mimetype }}</span>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Chunks:</strong><br>
+                                    <span class="text-muted">{{ file.chunk_count }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Chunk Size:</strong><br>
+                                    <span class="text-muted">{{ "%.1f"|format(file.chunk_size / 1024) }} KB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-cloud me-2"></i>Storage Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span>Local Storage:</span>
+                                <span class="badge bg-success">Available</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span>Cloud Backup:</span>
+                                {% if file.is_synced %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-cloud-check me-1"></i>Synced
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-cloud-upload-alt me-1"></i>Not Synced
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% if file.is_synced and file.cloud_url %}
+                            <hr>
+                            <small class="text-muted">
+                                <strong>Cloud URL:</strong><br>
+                                <code class="small">{{ file.cloud_url }}</code>
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .file-viewer-container {
+        overflow: hidden;
+    }
+    
+    .file-viewer-container iframe {
+        border-radius: 8px;
+    }
+    
+    .file-viewer-container img {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-radius: 8px;
+    }
+    
+    body {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}

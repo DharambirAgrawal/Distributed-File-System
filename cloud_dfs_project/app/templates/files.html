@@ -63,7 +63,7 @@
                             <div class="d-flex align-items-start justify-content-between mb-3">
                                 <div class="flex-grow-1">
                                     <h6 class="card-title text-truncate mb-1" title="{{ file.original_filename }}">
-                                        <i class="fas fa-file me-2 text-muted"></i>
+                                        <i class="{{ get_file_type_icon(file.original_filename) }} me-2 text-muted"></i>
                                         {{ file.original_filename }}
                                     </h6>
                                     <small class="text-muted">
@@ -76,6 +76,18 @@
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu">
+                                        {% if is_file_viewable(file.original_filename) %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.file_viewer_page', file_id=file.id) }}">
+                                                <i class="fas fa-expand me-2"></i>Open in Viewer
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.view_file_web', file_id=file.id) }}" target="_blank">
+                                                <i class="fas fa-eye me-2"></i>Quick View
+                                            </a>
+                                        </li>
+                                        {% endif %}
                                         <li>
                                             <a class="dropdown-item" href="{{ url_for('main.download_file_web', file_id=file.id) }}">
                                                 <i class="fas fa-download me-2"></i>Download
@@ -83,7 +95,7 @@
                                         </li>
                                         {% if not file.is_synced %}
                                         <li>
-                                            <a class="dropdown-item" href="{{ url_for('main.sync_to_cloud', file_id=file.id) }}">
+                                            <a class="dropdown-item" href="{{ url_for('main.sync_to_backup', file_id=file.id) }}">
                                                 <i class="fas fa-cloud-upload-alt me-2"></i>Sync to Cloud
                                             </a>
                                         </li>
@@ -134,12 +146,18 @@
                                     {% endif %}
                                 </div>
                                 <div class="file-actions">
+                                    {% if is_file_viewable(file.original_filename) %}
+                                    <a href="{{ url_for('main.file_viewer_page', file_id=file.id) }}" 
+                                       class="btn btn-sm btn-outline-info" title="View in Viewer">
+                                        <i class="fas fa-expand"></i>
+                                    </a>
+                                    {% endif %}
                                     <a href="{{ url_for('main.download_file_web', file_id=file.id) }}" 
                                        class="btn btn-sm btn-outline-primary" title="Download">
                                         <i class="fas fa-download"></i>
                                     </a>
                                     {% if not file.is_synced %}
-                                    <a href="{{ url_for('main.sync_to_cloud', file_id=file.id) }}" 
+                                    <a href="{{ url_for('main.sync_to_backup', file_id=file.id) }}" 
                                        class="btn btn-sm btn-outline-success" title="Sync to Cloud">
                                         <i class="fas fa-cloud-upload-alt"></i>
                                     </a>
