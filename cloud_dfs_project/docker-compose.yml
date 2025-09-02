@@ -27,13 +27,13 @@ services:
       - FLASK_DEBUG=true
       - DATABASE_URL=postgresql://dfs_user:dfs_password@postgres:5432/dfs_db
       - STORAGE_PATH=/app/storage
+      - BACKUP_PATH=/app/backup_cloud
       - CHUNK_SIZE=1048576
-      - ENABLE_CLOUD_BACKUP=false
       - SECRET_KEY=dev-secret-key-change-in-production
     volumes:
       - ./storage:/app/storage
+      - ./backup_cloud:/app/backup_cloud
       - ./uploads:/app/uploads
-      - ./gcp-credentials.json:/app/gcp-credentials.json:ro  # Mount GCP credentials if available
     ports:
       - "5000:5000"
     depends_on:

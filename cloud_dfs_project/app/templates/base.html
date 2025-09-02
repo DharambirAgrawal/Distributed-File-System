@@ -45,10 +45,48 @@
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <i class="fas fa-cloud"></i> Cloud DFS
             </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{{ url_for('main.index') }}">Home</a>
-                <a class="nav-link" href="{{ url_for('main.upload_page') }}">Upload</a>
-                <a class="nav-link" href="{{ url_for('main.files_page') }}">Files</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav me-auto">
+                    <a class="nav-link" href="{{ url_for('main.index') }}">
+                        <i class="fas fa-home me-1"></i>Home
+                    </a>
+                    {% if current_user.is_authenticated %}
+                        <a class="nav-link" href="{{ url_for('main.upload_page') }}">
+                            <i class="fas fa-cloud-upload-alt me-1"></i>Upload
+                        </a>
+                        <a class="nav-link" href="{{ url_for('main.files_page') }}">
+                            <i class="fas fa-folder-open me-1"></i>My Files
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>{{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                    <i class="fas fa-user me-2"></i>Profile
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Sign Out
+                                </a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Sign In
+                        </a>
+                        <a class="nav-link" href="{{ url_for('auth.register') }}">
+                            <i class="fas fa-user-plus me-1"></i>Register
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>

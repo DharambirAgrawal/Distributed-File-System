@@ -71,3 +71,6 @@ test_file_*
 
 .env
 .env.example
+google_secret.json
+/google_secret
+/google_secret.json

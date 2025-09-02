@@ -1,31 +1,34 @@
-# 🌩️ Cloud-Integrated Distributed File System MVP
+# 🌩️ Local Distributed File System with User Authentication
 
-A modern **Distributed File System (DFS)** with **Google Cloud Storage** integration, built with **Flask**, **PostgreSQL**, and **Docker**. This project demonstrates distributed storage, file chunking, cloud backup, fault tolerance, and RESTful API design.
+A modern **Distributed File System (DFS)** with **user authentication** and **local backup storage**, built with **Flask**, **PostgreSQL**, **Flask-Login**, and **Docker**. This project demonstrates distributed storage, file chunking, local backup, user isolation, and RESTful API design.
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Flask](https://img.shields.io/badge/Flask-2.3.3-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
 ![Docker](https://img.shields.io/badge/Docker-Ready-brightgreen)
-![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Storage-orange)
+![Flask-Login](https://img.shields.io/badge/Flask--Login-Authentication-red)
 
 ## 🚀 Features
 
 ### Core Functionality
-- **📦 File Chunking**: Automatic splitting of files into configurable chunks (default: 1MB)
+- **👤 User Authentication**: Secure registration, login, and session management
+- **� User Isolation**: Each user has separate, secure file storage
+- **�📦 File Chunking**: Automatic splitting of files into configurable chunks (default: 1MB)
 - **💾 Local Storage**: Fast local chunk storage with PostgreSQL metadata
-- **☁️ Cloud Backup**: Seamless Google Cloud Storage integration
-- **🔄 Fault Tolerance**: Automatic chunk recovery from cloud when local chunks are missing
+- **🗂️ Local Backup**: Local filesystem backup for fault tolerance
+- **🔄 Fault Tolerance**: Automatic chunk recovery from backup when local chunks are missing
 - **🔒 Data Integrity**: SHA256 checksums for file verification
 
 ### Interfaces
-- **🌐 Web UI**: Clean Bootstrap-based interface for upload, download, and management
-- **🔌 REST API**: Complete RESTful API for programmatic access
-- **📊 Real-time Stats**: Storage usage monitoring and file statistics
+- **🌐 Web UI**: Clean Bootstrap-based interface with user authentication
+- **🔌 REST API**: Complete RESTful API with authentication protection
+- **📊 Real-time Stats**: Storage usage monitoring and file statistics per user
 
 ### Technology Stack
-- **Backend**: Python 3.11, Flask, SQLAlchemy
+- **Backend**: Python 3.11, Flask, SQLAlchemy, Flask-Login
 - **Database**: PostgreSQL 15
-- **Cloud**: Google Cloud Storage
+- **Authentication**: Flask-Login with Werkzeug password hashing
+- **Storage**: Local filesystem with backup directory
 - **Frontend**: Bootstrap 5, Vanilla JavaScript
 - **Containerization**: Docker & Docker Compose
 
@@ -35,22 +38,28 @@ A modern **Distributed File System (DFS)** with **Google Cloud Storage** integra
 cloud_dfs_project/
 │
 ├── app/
-│   ├── __init__.py              # Flask app factory
-│   ├── routes.py                # Web and API routes
-│   ├── models.py                # Database models
+│   ├── __init__.py              # Flask app factory with auth setup
+│   ├── routes.py                # Main web routes (protected)
+│   ├── auth.py                  # Authentication routes
+│   ├── api.py                   # REST API endpoints (protected)
+│   ├── models.py                # Database models (User, File)
 │   ├── storage/
 │   │   ├── chunker.py           # File chunking logic
 │   │   ├── local_storage.py     # Local storage operations
-│   │   └── cloud_storage.py     # Google Cloud Storage integration
+│   │   └── cloud_storage.py     # Local backup storage integration
 │   └── templates/
-│       ├── base.html            # Base template
-│       ├── index.html           # Homepage
-│       ├── upload.html          # Upload interface
-│       └── files.html           # File management
+│       ├── base.html            # Base template with auth nav
+│       ├── index.html           # Homepage with auth flow
+│       ├── auth/                # Authentication templates
+│       │   ├── login.html       # Login form
+│       │   ├── register.html    # Registration form
+│       │   └── profile.html     # User profile
+│       ├── upload.html          # Upload interface (protected)
+│       └── files.html           # File management (protected)
 │
 ├── config.py                    # Configuration management
 ├── app.py                       # Application entry point
-├── requirements.txt             # Python dependencies
+├── requirements.txt             # Python dependencies (no GCS)
 ├── Dockerfile                   # Container configuration
 ├── docker-compose.yml           # Multi-service orchestration
 ├── init-db.sql                  # Database initialization
@@ -62,7 +71,6 @@ cloud_dfs_project/
 
 ### Prerequisites
 - **Docker** and **Docker Compose**
-- **Google Cloud Account** (optional, for cloud backup)
 
 ### 1. Clone and Setup
 
@@ -74,7 +82,7 @@ cd cloud_dfs_project
 # Copy environment configuration
 cp .env.example .env
 
-# Edit .env file with your settings (optional for basic setup)
+# Edit .env file with your settings (DATABASE_URL, SECRET_KEY)
 nano .env
 ```
 

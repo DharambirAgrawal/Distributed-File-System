@@ -11,8 +11,23 @@
                 <i class="fas fa-cloud-upload-alt"></i> Cloud Distributed File System
             </h1>
             <p class="lead text-muted">
-                Upload, store, and manage your files with distributed chunking and cloud backup capabilities.
+                Secure, user-isolated file storage with distributed chunking and local backup capabilities.
             </p>
+            {% if not current_user.is_authenticated %}
+                <div class="mt-4">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-user-plus me-2"></i>Get Started
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-success mt-4">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Welcome back, <strong>{{ current_user.username }}</strong>! Ready to manage your files?
+                </div>
+            {% endif %}
         </div>
 
         <!-- Feature Cards -->
@@ -34,11 +49,11 @@
                 <div class="card h-100 text-center border-0 shadow-sm">
                     <div class="card-body">
                         <div class="feature-icon text-success mb-3">
-                            <i class="fas fa-cloud-download-alt fa-3x"></i>
+                            <i class="fas fa-hdd fa-3x"></i>
                         </div>
-                        <h5 class="card-title">Cloud Backup</h5>
+                        <h5 class="card-title">Local Backup</h5>
                         <p class="card-text text-muted">
-                            Automatic backup to Google Cloud Storage ensures your files are safe and accessible.
+                            Automatic backup to local storage ensures your files are safe and always available.
                         </p>
                     </div>
                 </div>
@@ -47,11 +62,11 @@
                 <div class="card h-100 text-center border-0 shadow-sm">
                     <div class="card-body">
                         <div class="feature-icon text-warning mb-3">
-                            <i class="fas fa-shield-alt fa-3x"></i>
+                            <i class="fas fa-user-shield fa-3x"></i>
                         </div>
-                        <h5 class="card-title">Fault Tolerance</h5>
+                        <h5 class="card-title">User Isolation</h5>
                         <p class="card-text text-muted">
-                            Missing chunks are automatically restored from cloud backup when needed.
+                            Each user has secure, isolated storage with authentication and access control.
                         </p>
                     </div>
                 </div>
@@ -59,6 +74,7 @@
         </div>
 
         <!-- Quick Actions -->
+        {% if current_user.is_authenticated %}
         <div class="row g-3">
             <div class="col-md-6">
                 <div class="d-grid">
@@ -77,6 +93,12 @@
                 </div>
             </div>
         </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Get started today!</strong> Create an account to upload and manage your files securely.
+        </div>
+        {% endif %}
 
         <!-- System Status -->
         <div class="card mt-5 border-0 shadow-sm">
@@ -90,7 +112,7 @@
                     <div class="col-md-3">
                         <div class="border-end">
                             <h6 class="text-muted">Storage Engine</h6>
-                            <p class="fw-bold">Local + Cloud</p>
+                            <p class="fw-bold">Local + Backup</p>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -150,8 +172,8 @@
                             </tr>
                             <tr>
                                 <td><span class="badge bg-primary">POST</span></td>
-                                <td><code>/api/files/{id}/sync</code></td>
-                                <td>Sync file to cloud</td>
+                                <td><code>/api/files/{id}/backup</code></td>
+                                <td>Sync file to backup storage</td>
                             </tr>
                             <tr>
                                 <td><span class="badge bg-danger">DELETE</span></td>
