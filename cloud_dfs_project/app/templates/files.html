@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Files - Cloud DFS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-primary mb-1">
+                    <i class="fas fa-folder-open me-2"></i>File Manager
+                </h2>
+                <p class="text-muted mb-0">Manage your distributed files and cloud backups</p>
+            </div>
+            <div>
+                <a href="{{ url_for('main.upload_page') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Upload New File
+                </a>
+            </div>
+        </div>
+
+        <!-- Storage Usage Card -->
+        <div class="card border-0 shadow-sm mb-4 storage-info">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-hdd fa-3x mb-2"></i>
+                        <h6 class="mb-0">Local Storage</h6>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <h5 class="mb-1">{{ storage_usage.total_size_mb }} MB</h5>
+                                <small class="opacity-75">Total Used</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5 class="mb-1">{{ storage_usage.chunk_count }}</h5>
+                                <small class="opacity-75">Total Chunks</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5 class="mb-1">{{ files|length }}</h5>
+                                <small class="opacity-75">Total Files</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5 class="mb-1">{{ files|selectattr('is_synced')|list|length }}</h5>
+                                <small class="opacity-75">Cloud Synced</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Files List -->
+        {% if files %}
+            <div class="row g-4">
+                {% for file in files %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card file-card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <!-- File Header -->
+                            <div class="d-flex align-items-start justify-content-between mb-3">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title text-truncate mb-1" title="{{ file.original_filename }}">
+                                        <i class="fas fa-file me-2 text-muted"></i>
+                                        {{ file.original_filename }}
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ file.upload_date.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.download_file_web', file_id=file.id) }}">
+                                                <i class="fas fa-download me-2"></i>Download
+                                            </a>
+                                        </li>
+                                        {% if not file.is_synced %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.sync_to_cloud', file_id=file.id) }}">
+                                                <i class="fas fa-cloud-upload-alt me-2"></i>Sync to Cloud
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger delete-file-btn" href="#" 
+                                               data-file-id="{{ file.id }}" 
+                                               data-file-name="{{ file.original_filename }}">
+                                                <i class="fas fa-trash me-2"></i>Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- File Stats -->
+                            <div class="row text-center small text-muted mb-3">
+                                <div class="col-4">
+                                    <div class="border-end">
+                                        <strong class="d-block text-dark">{{ "%.2f"|format(file.file_size / 1024 / 1024) }} MB</strong>
+                                        <span>Size</span>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border-end">
+                                        <strong class="d-block text-dark">{{ file.chunk_count }}</strong>
+                                        <span>Chunks</span>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <strong class="d-block text-dark">{{ "%.1f"|format(file.chunk_size / 1024) }} KB</strong>
+                                    <span>Chunk Size</span>
+                                </div>
+                            </div>
+
+                            <!-- Sync Status -->
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="sync-status">
+                                    {% if file.is_synced %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-cloud-check me-1"></i>Cloud Synced
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-cloud-upload-alt me-1"></i>Local Only
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="file-actions">
+                                    <a href="{{ url_for('main.download_file_web', file_id=file.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% if not file.is_synced %}
+                                    <a href="{{ url_for('main.sync_to_cloud', file_id=file.id) }}" 
+                                       class="btn btn-sm btn-outline-success" title="Sync to Cloud">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <div class="empty-state">
+                    <i class="fas fa-folder-open fa-5x text-muted mb-3"></i>
+                    <h4 class="text-muted">No files uploaded yet</h4>
+                    <p class="text-muted mb-4">Start by uploading your first file to the distributed storage system.</p>
+                    <a href="{{ url_for('main.upload_page') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Upload Your First File
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the file <strong id="deleteFileName"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action will delete the file from both local storage and cloud backup (if synced). This cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash me-2"></i>Delete File
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let deleteFileId = null;
+    
+    // Add event listeners to delete buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.delete-file-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const fileId = this.getAttribute('data-file-id');
+                const fileName = this.getAttribute('data-file-name');
+                deleteFile(fileId, fileName);
+            });
+        });
+    });
+    
+    function deleteFile(fileId, fileName) {
+        deleteFileId = fileId;
+        document.getElementById('deleteFileName').textContent = fileName;
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+    
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (deleteFileId) {
+            // Show loading state
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...';
+            this.disabled = true;
+            
+            // Make API call to delete file
+            fetch(`/api/files/${deleteFileId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to reflect changes
+                    window.location.reload();
+                } else {
+                    alert('Error deleting file: ' + data.message);
+                    // Reset button state
+                    this.innerHTML = '<i class="fas fa-trash me-2"></i>Delete File';
+                    this.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting file');
+                // Reset button state
+                this.innerHTML = '<i class="fas fa-trash me-2"></i>Delete File';
+                this.disabled = false;
+            });
+        }
+    });
+
+    // Auto-refresh page every 30 seconds to update sync status
+    setInterval(function() {
+        // Only refresh if no modals are open
+        if (!document.querySelector('.modal.show')) {
+            window.location.reload();
+        }
+    }, 30000);
+</script>
+{% endblock %}

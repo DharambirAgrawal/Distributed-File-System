@@ -1,0 +1,74 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: dfs_postgres
+    environment:
+      POSTGRES_DB: dfs_db
+      POSTGRES_USER: dfs_user
+      POSTGRES_PASSWORD: dfs_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dfs_user -d dfs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flask Application
+  web:
+    build: .
+    container_name: dfs_web
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=true
+      - DATABASE_URL=postgresql://dfs_user:dfs_password@postgres:5432/dfs_db
+      - STORAGE_PATH=/app/storage
+      - CHUNK_SIZE=1048576
+      - ENABLE_CLOUD_BACKUP=false
+      - SECRET_KEY=dev-secret-key-change-in-production
+    volumes:
+      - ./storage:/app/storage
+      - ./uploads:/app/uploads
+      - ./gcp-credentials.json:/app/gcp-credentials.json:ro  # Mount GCP credentials if available
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: dfs_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@dfs.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  default:
+    name: dfs_network
