@@ -13,7 +13,11 @@ This application demonstrates a distributed file system with:
 from app import create_app
 import os
 
-# Create Flask application
+# Set production environment if not already set
+if not os.environ.get('FLASK_ENV'):
+    os.environ['FLASK_ENV'] = 'production'
+
+# Create Flask application instance for gunicorn
 app = create_app()
 
 if __name__ == '__main__':
