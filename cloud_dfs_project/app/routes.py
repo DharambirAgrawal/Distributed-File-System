@@ -9,6 +9,7 @@ from app.storage.cloud_storage import CloudStorage
 import os
 import io
 import uuid
+import mimetypes
 from datetime import datetime
 
 # Blueprint for web interface
@@ -45,11 +46,53 @@ def get_storage_instances(user_id=None):
     
     return local_storage, chunker, cloud_storage
 
+def is_file_viewable(filename):
+    """Check if file can be viewed in browser (PDF or image)"""
+    mimetype, _ = mimetypes.guess_type(filename)
+    if not mimetype:
+        return False
+    
+    viewable_types = [
+        'application/pdf',
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 
+        'image/webp', 'image/svg+xml', 'image/tiff'
+    ]
+    
+    return mimetype in viewable_types
+
+def get_file_type_icon(filename):
+    """Get appropriate icon class for file type"""
+    mimetype, _ = mimetypes.guess_type(filename)
+    if not mimetype:
+        return 'fas fa-file'
+    
+    if mimetype.startswith('image/'):
+        return 'fas fa-file-image'
+    elif mimetype == 'application/pdf':
+        return 'fas fa-file-pdf'
+    elif mimetype.startswith('text/'):
+        return 'fas fa-file-alt'
+    elif mimetype.startswith('video/'):
+        return 'fas fa-file-video'
+    elif mimetype.startswith('audio/'):
+        return 'fas fa-file-audio'
+    else:
+        return 'fas fa-file'
+
 # Web Interface Routes
 @main.route('/')
 def index():
     """Home page"""
     return render_template('index.html')
+
+@main.route('/health')
+def health_check():
+    """Health check endpoint for deployment monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'service': 'Distributed File System'
+    })
 
 @main.route('/upload')
 @login_required
@@ -70,7 +113,12 @@ def files_page():
     if cloud_storage and cloud_storage.is_enabled():
         backup_usage = cloud_storage.get_backup_usage()
     
-    return render_template('files.html', files=files, storage_usage=storage_usage, backup_usage=backup_usage)
+    return render_template('files.html', 
+                         files=files, 
+                         storage_usage=storage_usage, 
+                         backup_usage=backup_usage,
+                         is_file_viewable=is_file_viewable,
+                         get_file_type_icon=get_file_type_icon)
 
 @main.route('/upload', methods=['POST'])
 @login_required
@@ -127,6 +175,76 @@ def download_file_web(file_id):
     except Exception as e:
         flash(f'Download failed: {str(e)}', 'error')
         return redirect(url_for('main.files_page'))
+
+@main.route('/view/<int:file_id>')
+@login_required
+def view_file_web(file_id):
+    """View file in browser (for PDFs and images)"""
+    file_record = File.query.filter_by(id=file_id, user_id=current_user.id).first_or_404()
+    
+    try:
+        local_storage, chunker, cloud_storage = get_storage_instances()
+        
+        # Check for missing chunks and try to restore from backup
+        missing_chunks = chunker.verify_chunks(file_record.chunk_list, local_storage.storage_path)
+        
+        if missing_chunks and cloud_storage and cloud_storage.is_enabled():
+            restored_chunks = cloud_storage.download_chunks(
+                missing_chunks, local_storage.storage_path, str(file_record.id)
+            )
+            if restored_chunks:
+                flash(f'Restored {len(restored_chunks)} chunks from backup', 'info')
+        
+        # Reconstruct file
+        file_data = chunker.reconstruct_file(file_record.chunk_list, local_storage.storage_path)
+        
+        # Determine MIME type from filename
+        mimetype, _ = mimetypes.guess_type(file_record.original_filename)
+        if not mimetype:
+            mimetype = 'application/octet-stream'
+        
+        # Check if file is viewable (PDF or image)
+        viewable_types = [
+            'application/pdf',
+            'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 
+            'image/webp', 'image/svg+xml', 'image/tiff'
+        ]
+        
+        if mimetype in viewable_types:
+            return send_file(
+                io.BytesIO(file_data),
+                as_attachment=False,
+                download_name=file_record.original_filename,
+                mimetype=mimetype
+            )
+        else:
+            flash(f'File type "{mimetype}" is not viewable in browser. Download the file instead.', 'warning')
+            return redirect(url_for('main.files_page'))
+    
+    except Exception as e:
+        flash(f'View failed: {str(e)}', 'error')
+        return redirect(url_for('main.files_page'))
+
+@main.route('/viewer/<int:file_id>')
+@login_required
+def file_viewer_page(file_id):
+    """Display file in dedicated viewer page"""
+    file_record = File.query.filter_by(id=file_id, user_id=current_user.id).first_or_404()
+    
+    # Determine MIME type from filename
+    mimetype, _ = mimetypes.guess_type(file_record.original_filename)
+    if not mimetype:
+        mimetype = 'application/octet-stream'
+    
+    # Check if file is viewable
+    if not is_file_viewable(file_record.original_filename):
+        flash(f'File type "{mimetype}" is not viewable in browser. Download the file instead.', 'warning')
+        return redirect(url_for('main.files_page'))
+    
+    return render_template('file_viewer.html', 
+                         file=file_record, 
+                         file_mimetype=mimetype,
+                         get_file_type_icon=get_file_type_icon)
 
 @main.route('/sync/<int:file_id>')
 @login_required
@@ -229,6 +347,45 @@ def download_file_api(file_id):
             as_attachment=True,
             download_name=file_record.original_filename,
             mimetype='application/octet-stream'
+        )
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@api.route('/files/<int:file_id>/view', methods=['GET'])
+@login_required
+def view_file_api(file_id):
+    """API: View a file in browser (for PDFs and images)"""
+    file_record = File.query.filter_by(id=file_id, user_id=current_user.id).first_or_404()
+    
+    try:
+        local_storage, chunker, cloud_storage = get_storage_instances()
+        
+        # Check for missing chunks and try to restore from backup
+        missing_chunks = chunker.verify_chunks(file_record.chunk_list, local_storage.storage_path)
+        
+        if missing_chunks and cloud_storage and cloud_storage.is_enabled():
+            cloud_storage.download_chunks(
+                missing_chunks, local_storage.storage_path, str(file_record.id)
+            )
+        
+        # Reconstruct file
+        file_data = chunker.reconstruct_file(file_record.chunk_list, local_storage.storage_path)
+        
+        # Determine MIME type from filename
+        mimetype, _ = mimetypes.guess_type(file_record.original_filename)
+        if not mimetype:
+            mimetype = 'application/octet-stream'
+        
+        # Check if file is viewable
+        if not is_file_viewable(file_record.original_filename):
+            return jsonify({'success': False, 'message': f'File type "{mimetype}" is not viewable in browser'}), 400
+        
+        return send_file(
+            io.BytesIO(file_data),
+            as_attachment=False,
+            download_name=file_record.original_filename,
+            mimetype=mimetype
         )
     
     except Exception as e:

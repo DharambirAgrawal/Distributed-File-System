@@ -31,6 +31,13 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    # For production, use environment variables
+    SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(24).hex()
+    # Render provides DATABASE_URL for PostgreSQL
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', Config.DATABASE_URL)
+    # Ensure paths work in production
+    STORAGE_PATH = os.environ.get('STORAGE_PATH') or '/opt/render/project/src/storage'
+    BACKUP_PATH = os.environ.get('BACKUP_PATH') or '/opt/render/project/src/backup_cloud'
 
 config = {
     'development': DevelopmentConfig,
