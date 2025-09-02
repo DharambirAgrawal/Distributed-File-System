@@ -67,3 +67,7 @@ htmlcov/
 *.tmp
 *.temp
 test_file_*
+
+
+.env
+.env.example
