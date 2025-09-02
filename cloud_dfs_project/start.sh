@@ -15,4 +15,4 @@ fi
 echo "✅ Setup complete, starting application..."
 
 # Start the application
-exec gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+exec gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
