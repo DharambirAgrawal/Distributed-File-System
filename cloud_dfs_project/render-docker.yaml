@@ -1,0 +1,42 @@
+# Docker-based Render deployment configuration
+services:
+  - type: web
+    name: distributed-file-system
+    env: docker
+    plan: starter  # free tier has limitations, starter recommended for Docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: distributed-fs-db
+          property: connectionString
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: false
+      - key: CHUNK_SIZE
+        value: "1048576"
+      - key: STORAGE_PATH
+        value: /app/storage
+      - key: BACKUP_PATH
+        value: /app/backup_cloud
+      - key: UPLOAD_FOLDER
+        value: /app/uploads
+      - key: ENABLE_CLOUD_BACKUP
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    disk:
+      name: dfs-storage
+      mountPath: /app/storage
+      sizeGB: 2
+    healthCheckPath: /health
+
+databases:
+  - name: distributed-fs-db
+    databaseName: dfs_db
+    user: dfs_user
+    plan: free
