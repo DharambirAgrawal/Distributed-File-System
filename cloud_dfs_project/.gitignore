@@ -46,7 +46,7 @@ ehthumbs.db
 Thumbs.db
 
 # Application specific
-storage/
+# storage/
 uploads/
 *.log
 gcp-credentials.json
