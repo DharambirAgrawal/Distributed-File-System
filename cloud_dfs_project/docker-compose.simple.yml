@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - FLASK_ENV=production
+      - SECRET_KEY=dev-secret-key-for-docker
+      - DATABASE_URL=sqlite:///dfs_docker.db
+      - ENABLE_CLOUD_BACKUP=false
+    volumes:
+      - ./storage:/app/storage
+      - ./uploads:/app/uploads
+      - ./backup_cloud:/app/backup_cloud
+    restart: unless-stopped
+    
+  # Uncomment for PostgreSQL database
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_DB: dfs
+  #     POSTGRES_USER: dfs
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   postgres_data:

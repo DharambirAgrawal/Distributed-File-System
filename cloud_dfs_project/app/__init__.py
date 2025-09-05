@@ -28,32 +28,53 @@ def create_app(config_name=None):
         from app.models import User
         return User.query.get(int(user_id))
     
-    # Create storage directories safely
+    # Create storage directories safely with proper error handling
     def create_dir_safely(path, name):
-        """Create directory safely with error handling"""
+        """Create directory safely with error handling and fallbacks"""
+        # Make path absolute and resolve any issues
         try:
-            if not os.path.exists(path):
-                os.makedirs(path, exist_ok=True)
-                print(f"✅ Created {name} directory: {path}")
-        except PermissionError:
+            # Convert relative paths
+            if path.startswith('./'):
+                path = os.path.join(os.getcwd(), path[2:])
+            elif not os.path.isabs(path):
+                path = os.path.join(os.getcwd(), path)
+            
+            # Create directory
+            os.makedirs(path, mode=0o755, exist_ok=True)
+            print(f"✅ Created {name} directory: {path}")
+            return path
+            
+        except PermissionError as e:
             print(f"⚠️  Permission denied creating {name} directory: {path}")
-            # Try to use a fallback path in current directory
-            fallback_path = f"./{os.path.basename(path)}"
+            # Use current directory as fallback
+            fallback_path = os.path.join(os.getcwd(), os.path.basename(path))
             try:
-                os.makedirs(fallback_path, exist_ok=True)
+                os.makedirs(fallback_path, mode=0o755, exist_ok=True)
                 print(f"✅ Using fallback {name} directory: {fallback_path}")
                 return fallback_path
-            except Exception as e:
-                print(f"❌ Failed to create fallback directory: {e}")
-                return path
+            except Exception as e2:
+                print(f"❌ Fallback also failed: {e2}")
+                # Final fallback - use temp directory structure
+                import tempfile
+                temp_base = tempfile.gettempdir()
+                final_path = os.path.join(temp_base, 'dfs_app', os.path.basename(path))
+                os.makedirs(final_path, mode=0o755, exist_ok=True)
+                print(f"✅ Using temp {name} directory: {final_path}")
+                return final_path
+                
         except Exception as e:
             print(f"❌ Error creating {name} directory {path}: {e}")
-        return path
+            # Final emergency fallback
+            emergency_path = os.path.join('.', f'emergency_{os.path.basename(path)}')
+            os.makedirs(emergency_path, mode=0o755, exist_ok=True)
+            print(f"🚨 Emergency fallback {name} directory: {emergency_path}")
+            return emergency_path
     
+    # Create directories with fallbacks
     storage_path = create_dir_safely(app.config['STORAGE_PATH'], 'storage')
     app.config['STORAGE_PATH'] = storage_path
     
-    upload_path = create_dir_safely(app.config['UPLOAD_FOLDER'], 'upload')
+    upload_path = create_dir_safely(app.config['UPLOAD_FOLDER'], 'upload') 
     app.config['UPLOAD_FOLDER'] = upload_path
     
     backup_path = create_dir_safely(app.config.get('BACKUP_PATH', './backup_cloud'), 'backup')
