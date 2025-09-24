@@ -8,9 +8,20 @@ from PyPDF2 import PdfReader
 from PIL import Image
 import pytesseract
 
+def _get_upload_root() -> str:
+    """Return the base directory used to store uploads."""
+
+    env_root = os.getenv("UPLOAD_ROOT")
+    if env_root:
+        return os.path.abspath(env_root)
+
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return os.path.join(project_root, "uploads")
+
+
 def get_user_upload_dir(user_id):
     """Get the upload directory for a specific user"""
-    base_dir = "/workspaces/Distributed-File-System/ai_research_assistant/uploads"
+    base_dir = _get_upload_root()
     return os.path.join(base_dir, f"user_{user_id}")
 
 def ensure_user_directory(directory):
