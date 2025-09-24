@@ -1,0 +1,264 @@
+{% extends "base.html" %} {% block title %}Dashboard - AI Research Assistant{%
+endblock %} {% block content %}
+<div class="card">
+  <h2>Welcome, {{ user.username }}!</h2>
+  <p>Manage your uploaded files and tags from this dashboard.</p>
+
+  <div style="margin-top: 2rem">
+    <a href="{{ url_for('upload') }}" class="btn btn-success"
+      >Upload New File</a
+    >
+  </div>
+</div>
+
+<div class="card">
+  <h3>Your Files ({{ files|length }})</h3>
+
+  {% if files %}
+  <div class="file-list">
+    {% for file in files %}
+    <div class="file-item">
+      <div class="file-info">
+        <h3>{{ file.file_name }}</h3>
+        <div class="file-meta">
+          Uploaded: {{ file.created_at.strftime('%Y-%m-%d %H:%M') }} {% if
+          file.summary %}
+          <br />Summary: {{ file.summary }} {% endif %}
+        </div>
+
+        {% if file.tags %}
+        <div class="tags">
+          {% for tag in file.tags %}
+          <span class="tag">
+            {{ tag }}
+            <a
+              href="{{ url_for('remove_tag', document_id=file.id, tag=tag) }}"
+              style="
+                color: #1976d2;
+                text-decoration: none;
+                margin-left: 0.25rem;
+              "
+              onclick="return confirm('Remove this tag?')"
+              >×</a
+            >
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Add tag form -->
+        <form
+          method="POST"
+          action="{{ url_for('add_tag', document_id=file.id) }}"
+          style="margin-top: 0.5rem; display: flex; gap: 0.5rem"
+        >
+          <input
+            type="text"
+            name="tag"
+            placeholder="Add tag..."
+            style="
+              flex: 1;
+              padding: 0.25rem 0.5rem;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+            "
+          />
+          <button type="submit" class="btn" style="padding: 0.25rem 0.75rem">
+            Add Tag
+          </button>
+        </form>
+
+        <div class="share-section">
+          <h4 style="margin-top: 1rem; margin-bottom: 0.5rem">Secure Share</h4>
+          <form
+            method="POST"
+            action="{{ url_for('create_share', document_id=file.id) }}"
+            class="share-form"
+            style="
+              display: grid;
+              gap: 0.5rem;
+              grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+              align-items: end;
+            "
+          >
+            <div>
+              <label
+                for="password-{{ file.id }}"
+                style="
+                  display: block;
+                  font-size: 0.85rem;
+                  margin-bottom: 0.25rem;
+                "
+                >Password</label
+              >
+              <input
+                id="password-{{ file.id }}"
+                type="password"
+                name="share_password"
+                placeholder="Enter a password"
+                required
+                style="
+                  width: 100%;
+                  padding: 0.4rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              />
+            </div>
+            <div>
+              <label
+                for="downloads-{{ file.id }}"
+                style="
+                  display: block;
+                  font-size: 0.85rem;
+                  margin-bottom: 0.25rem;
+                "
+                >Max Downloads (optional)</label
+              >
+              <input
+                id="downloads-{{ file.id }}"
+                type="number"
+                name="max_downloads"
+                min="1"
+                placeholder="Unlimited"
+                style="
+                  width: 100%;
+                  padding: 0.4rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              />
+            </div>
+            <div>
+              <label
+                for="expires-{{ file.id }}"
+                style="
+                  display: block;
+                  font-size: 0.85rem;
+                  margin-bottom: 0.25rem;
+                "
+                >Expires At (optional)</label
+              >
+              <input
+                id="expires-{{ file.id }}"
+                type="datetime-local"
+                name="expires_at"
+                style="
+                  width: 100%;
+                  padding: 0.4rem;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                "
+              />
+            </div>
+            <div>
+              <button type="submit" class="btn" style="width: 100%">
+                Generate Share
+              </button>
+            </div>
+          </form>
+
+          {% if file.shares %}
+          <div class="share-table-wrapper" style="margin-top: 0.75rem">
+            <table
+              class="share-table"
+              style="width: 100%; border-collapse: collapse; font-size: 0.9rem"
+            >
+              <thead>
+                <tr style="text-align: left; border-bottom: 1px solid #e0e0e0">
+                  <th style="padding: 0.5rem">Share Link</th>
+                  <th style="padding: 0.5rem">Password</th>
+                  <th style="padding: 0.5rem">Views</th>
+                  <th style="padding: 0.5rem">Downloads</th>
+                  <th style="padding: 0.5rem">Remaining</th>
+                  <th style="padding: 0.5rem">Status</th>
+                  <th style="padding: 0.5rem">Expires</th>
+                  <th style="padding: 0.5rem">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for share in file.shares %} {% set share_url = share_base_url
+                + url_for('shared_file', token=share.encrypted_link) %}
+                <tr style="border-bottom: 1px solid #f0f0f0">
+                  <td style="padding: 0.5rem; max-width: 280px">
+                    <input
+                      type="text"
+                      readonly
+                      onclick="this.select()"
+                      value="{{ share_url }}"
+                      style="
+                        width: 100%;
+                        padding: 0.35rem;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                      "
+                    />
+                  </td>
+                  <td style="padding: 0.5rem">
+                    {% if share.plain_password %}
+                    <span style="font-family: monospace"
+                      >{{ share.plain_password }}</span
+                    >
+                    {% else %}
+                    <span style="color: #888">Not stored</span>
+                    {% endif %}
+                  </td>
+                  <td style="padding: 0.5rem">{{ share.views }}</td>
+                  <td style="padding: 0.5rem">{{ share.downloads }}</td>
+                  <td style="padding: 0.5rem">
+                    {% if share.remaining_downloads is not none %} {{
+                    share.remaining_downloads }} {% else %} ∞ {% endif %}
+                  </td>
+                  <td style="padding: 0.5rem">{{ share.status }}</td>
+                  <td style="padding: 0.5rem">
+                    {% if share.expires_at %} {{
+                    share.expires_at.strftime('%Y-%m-%d %H:%M') }} {% else %} —
+                    {% endif %}
+                  </td>
+                  <td style="padding: 0.5rem">
+                    {% if share.status != 'Revoked' %}
+                    <form
+                      method="POST"
+                      action="{{ url_for('revoke_share', share_id=share.id) }}"
+                      onsubmit="return confirm('Revoke this share link?')"
+                    >
+                      <button
+                        type="submit"
+                        class="btn btn-danger"
+                        style="padding: 0.35rem 0.75rem"
+                      >
+                        Revoke
+                      </button>
+                    </form>
+                    {% else %}
+                    <span style="color: #888">Revoked</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="file-actions">
+        <a
+          href="{{ url_for('delete_file', document_id=file.id) }}"
+          class="btn btn-danger"
+          onclick="return confirm('Are you sure you want to delete this file?')"
+          >Delete</a
+        >
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="text-align: center; color: #666; margin: 2rem 0">
+    No files uploaded yet.
+    <a href="{{ url_for('upload') }}">Upload your first file</a>
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

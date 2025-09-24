@@ -1,0 +1,72 @@
+{% extends "base.html" %} {% block title %}Secure Share{% endblock %} {% block
+content %}
+<div class="card" style="max-width: 560px; margin: 0 auto">
+  <h2 style="margin-bottom: 1rem">Secure Document Access</h2>
+
+  {% if error %}
+  <div class="alert alert-error" style="margin-bottom: 1rem">{{ error }}</div>
+  {% endif %} {% if authorized and share %}
+  <p style="margin-bottom: 1rem">
+    You're viewing a shared document from the AI Research Assistant.
+  </p>
+  <div style="margin-bottom: 1rem">
+    <p style="margin-bottom: 0.5rem">
+      <strong>File:</strong> {{ share.file_name }}
+    </p>
+    <p style="margin-bottom: 0.25rem">
+      <strong>Status:</strong> {{ share.status }}
+    </p>
+    <p style="margin-bottom: 0.25rem">
+      <strong>Views:</strong> {{ share.views }}
+    </p>
+    <p style="margin-bottom: 0.25rem">
+      <strong>Downloads:</strong> {{ share.downloads }}
+    </p>
+    <p style="margin-bottom: 0.25rem">
+      <strong>Remaining downloads:</strong>
+      {% if share.remaining_downloads is not none %} {{
+      share.remaining_downloads }} {% else %} Unlimited {% endif %}
+    </p>
+    <p>
+      <strong>Expires:</strong>
+      {% if share.expires_at %} {{ share.expires_at.strftime('%Y-%m-%d %H:%M')
+      }} {% else %} No expiry set {% endif %}
+    </p>
+  </div>
+
+  <a
+    href="{{ url_for('download_shared_file', token=token) }}"
+    class="btn btn-success"
+    style="display: inline-block"
+    >Download File</a
+  >
+  {% else %}
+  <p style="margin-bottom: 1rem">
+    Enter the password provided by the owner to continue.
+  </p>
+  <form method="POST" style="display: grid; gap: 0.75rem">
+    <div>
+      <label for="password" style="display: block; margin-bottom: 0.25rem"
+        >Password</label
+      >
+      <input
+        type="password"
+        id="password"
+        name="password"
+        required
+        autofocus
+        style="
+          width: 100%;
+          padding: 0.6rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        "
+      />
+    </div>
+    <button type="submit" class="btn" style="width: 100%">
+      Unlock Document
+    </button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

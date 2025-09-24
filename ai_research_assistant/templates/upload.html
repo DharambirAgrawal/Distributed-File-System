@@ -1,0 +1,54 @@
+{% extends "base.html" %} {% block title %}Upload Files - AI Research
+Assistant{% endblock %} {% block content %}
+<div class="card">
+  <h2>Upload New File</h2>
+
+  <form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="file">Choose File:</label>
+      <input
+        type="file"
+        id="file"
+        name="file"
+        required
+        accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif"
+      />
+      <small style="color: #666">
+        Allowed formats: TXT, PDF, DOC, DOCX, PNG, JPG, JPEG, GIF
+      </small>
+    </div>
+
+    <div class="form-group">
+      <button type="submit" class="btn btn-success">Upload File</button>
+      <a href="{{ url_for('dashboard') }}" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Upload Guidelines</h3>
+  <ul style="margin-left: 2rem">
+    <li>Maximum file size: Check with your administrator</li>
+    <li>Supported formats: TXT, PDF, DOC, DOCX, PNG, JPG, JPEG, GIF</li>
+    <li>Files are stored securely in your personal directory</li>
+    <li>You can add tags to organize your files after upload</li>
+    <li>All uploaded files can be managed from your dashboard</li>
+  </ul>
+</div>
+
+<script>
+  document.getElementById("file").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (file) {
+      const fileSize = file.size / 1024 / 1024; // Convert to MB
+      if (fileSize > 10) {
+        // 10MB limit
+        alert(
+          "File size is too large. Please choose a file smaller than 10MB."
+        );
+        this.value = "";
+      }
+    }
+  });
+</script>
+{% endblock %}

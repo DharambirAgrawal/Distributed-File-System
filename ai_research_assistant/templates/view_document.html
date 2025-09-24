@@ -1,0 +1,109 @@
+{% extends "base.html" %} {% block title %}{{ document.file_name }} - AI
+Research Assistant{% endblock %} {% block content %}
+<div class="card">
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    "
+  >
+    <div>
+      <h2>📄 {{ document.file_name }}</h2>
+      <div class="document-meta">
+        <p>
+          <strong>Uploaded:</strong> {{ document.created_at.strftime('%Y-%m-%d
+          %H:%M') }}
+        </p>
+        {% if document.summary %}
+        <p><strong>Summary:</strong> {{ document.summary }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="document-actions">
+      <a href="{{ url_for('dashboard') }}" class="btn">← Back to Dashboard</a>
+      <a href="{{ url_for('search') }}" class="btn">🔍 Search</a>
+    </div>
+  </div>
+
+  {% if document.tags %}
+  <div class="document-tags">
+    <strong>Tags:</strong>
+    {% for tag in document.tags %}
+    <span class="tag">{{ tag }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% if document.full_text_content %}
+<div class="card">
+  <h3>📖 Document Content</h3>
+  <div class="document-content">{{ document.full_text_content }}</div>
+</div>
+{% else %}
+<div class="card">
+  <div class="no-content">
+    <p style="text-align: center; color: #666">
+      No text content available for this document.
+    </p>
+    <p style="text-align: center; color: #666; font-size: 0.9rem">
+      This may be an image file or a document type that doesn't support text
+      extraction.
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<style>
+  .document-meta {
+    color: #666;
+    margin-top: 0.5rem;
+  }
+
+  .document-meta p {
+    margin: 0.25rem 0;
+  }
+
+  .document-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .document-tags {
+    padding: 1rem 0;
+    border-top: 1px solid #eee;
+    margin-top: 1rem;
+  }
+
+  .document-tags .tag {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+  }
+
+  .document-content {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    white-space: pre-wrap;
+    font-family: "Courier New", monospace;
+    line-height: 1.6;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  .no-content {
+    text-align: center;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+</style>
+{% endblock %}
