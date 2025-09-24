@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: ai-research-assistant
+    env: python
+    buildCommand: pip install -r ai_research_assistant/requirements.txt
+    startCommand: python ai_research_assistant/app.py
+    pythonVersion: 3.11.8
